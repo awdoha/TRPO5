@@ -1,0 +1,132 @@
+<!-- [Стиль] Корневой элемент приложения. Атрибуты: x:Class="Lab5.App" — связывает разметку с классом App (App.xaml.cs);
+     xmlns (первый, без префикса) — стандартные элементы WPF (Button, Style, Setter...); xmlns:x — служебные XAML-атрибуты (x:Class, x:Key, x:Type);
+     xmlns:local — подключает пространство имён Lab5 (здесь не используется, шаблонное);
+     StartupUri="MainWindow.xaml" — какое окно открыть при запуске (это и есть точка входа View). -->
+<Application x:Class="Lab5.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Lab5"
+             StartupUri="MainWindow.xaml">
+    <!-- [Стиль] Application.Resources — глобальные ресурсы: доступны во всех окнах приложения (кисти и стили ниже подхватывает MainWindow.xaml через StaticResource). -->
+    <Application.Resources>
+        <!-- ResourceDictionary — словарь ресурсов (контейнер «ключ -> объект»). -->
+        <ResourceDictionary>
+
+            <!-- Общий фон окна -->
+            <!-- [Стиль] Кисть цвета фона окна. x:Key — имя ресурса; Color — цвет в формате #AARRGGBB (светло-серый). Используется: Style для Window (ниже, Setter Background). -->
+            <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#FFF2F3F5" />
+            <!-- Кисть фона панелей (голубовато-серая). Используется: MainWindow.xaml — верхняя панель управления (MainWindow.xaml:32) и строка состояния (MainWindow.xaml:130). -->
+            <SolidColorBrush x:Key="PanelBackgroundBrush" Color="#FFE3E7ED" />
+            <!-- Акцентная кисть (синяя). Используется: Setter Background в ControlButtonStyle (ниже) — цвет кнопок управления. -->
+            <SolidColorBrush x:Key="AccentBrush" Color="#FF3B6EA5" />
+            <!-- Кисть мёртвой клетки (белая). Используется: Setter Background в CellButtonStyle (ниже). -->
+            <SolidColorBrush x:Key="CellDeadBrush" Color="#FFFFFFFF" />
+            <!-- Кисть живой клетки (зелёная). Используется: Setter внутри DataTrigger в CellButtonStyle (ниже) — клетка зеленеет, когда IsAlive == True. -->
+            <SolidColorBrush x:Key="CellAliveBrush" Color="#FF2E7D32" />
+            <!-- Кисть границ клеток и рамки поля (серая). Используется: CellButtonStyle (ниже) и рамка поля в MainWindow.xaml (MainWindow.xaml:95). -->
+            <SolidColorBrush x:Key="CellBorderBrush" Color="#FFB0B6BE" />
+
+            <!-- [Стиль] Неявный стиль (без x:Key): TargetType="Window" — применяется автоматически КО ВСЕМ окнам приложения, в том числе MainWindow. -->
+            <Style TargetType="Window">
+                <!-- Setter — «установить свойство»: Property — какое, Value — значение. StaticResource берёт кисть из словаря ОДИН раз при загрузке (DynamicResource следил бы за заменой ресурса). Фон окна. -->
+                <Setter Property="Background" Value="{StaticResource WindowBackgroundBrush}" />
+                <!-- Шрифт окна (наследуется дочерними элементами). -->
+                <Setter Property="FontFamily" Value="Segoe UI" />
+                <!-- Размер шрифта 13. -->
+                <Setter Property="FontSize" Value="13" />
+            </Style>
+
+            <!-- Стиль кнопок управляющей панели -->
+            <!-- [Стиль] Именованный стиль (x:Key) для кнопок: TargetType="Button". Применяется только там, где явно указан Style="{StaticResource ControlButtonStyle}" — все кнопки верхней панели в MainWindow.xaml (MainWindow.xaml:52, MainWindow.xaml:76–MainWindow.xaml:88). -->
+            <Style x:Key="ControlButtonStyle" TargetType="Button">
+                <!-- Внутренние отступы кнопки: 12 по горизонтали, 6 по вертикали. -->
+                <Setter Property="Padding" Value="12,6" />
+                <!-- Внешний отступ 4 со всех сторон (расстояние между кнопками). -->
+                <Setter Property="Margin" Value="4" />
+                <!-- Фон кнопки — синяя AccentBrush. -->
+                <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+                <!-- Цвет текста кнопки — белый. -->
+                <Setter Property="Foreground" Value="White" />
+                <!-- Толщина рамки 0 — рамки нет. -->
+                <Setter Property="BorderThickness" Value="0" />
+                <!-- Полужирный шрифт. -->
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <!-- Курсор-«рука» при наведении. -->
+                <Setter Property="Cursor" Value="Hand" />
+                <!-- Template — замена стандартного внешнего вида кнопки собственным (иначе Windows рисует стандартную серую кнопку и игнорирует наш Background при наведении). -->
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <!-- ControlTemplate TargetType="Button" — шаблон именно для кнопки. -->
+                        <ControlTemplate TargetType="Button">
+                            <!-- Border рисует фон. Атрибуты: Background="{TemplateBinding Background}" — взять цвет из свойства Background самой кнопки (см. Setter выше); CornerRadius="4" — скруглённые углы; Padding="{TemplateBinding Padding}" — внутренний отступ берём из кнопки. -->
+                            <Border Background="{TemplateBinding Background}"
+                                    CornerRadius="4"
+                                    Padding="{TemplateBinding Padding}">
+                                <!-- ContentPresenter — «место для содержимого» кнопки (её текст Content="Старт" и т.д.); выравнивание по центру по горизонтали и вертикали. -->
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <!-- Style.Triggers — правила «если свойство элемента стало X, то поменять ...». -->
+                <Style.Triggers>
+                    <!-- [Стиль] Обычный Trigger (в отличие от DataTrigger) смотрит на СВОЙСТВО САМОГО ЭЛЕМЕНТА: IsMouseOver == True — курсор над кнопкой. -->
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <!-- Кнопка чуть прозрачнее (0.85) — эффект подсветки при наведении. -->
+                        <Setter Property="Opacity" Value="0.85" />
+                    </Trigger>
+                    <!-- [Команда] IsEnabled == False: кнопка выключена. Именно этим свойством WPF отображает результат CanExecute == false команды (RelayCommand.CanExecute, RelayCommand.cs:55) — например, «Старт» при IsRunning. -->
+                    <Trigger Property="IsEnabled" Value="False">
+                        <!-- Выключенная кнопка сильно бледнеет (Opacity 0.4) — пользователь видит, что нажать нельзя. -->
+                        <Setter Property="Opacity" Value="0.4" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- Стиль ячейки поля: цвет зависит от IsAlive через DataTrigger -->
+            <!-- [Стиль] Стиль кнопки-клетки. Используется: MainWindow.xaml, Button внутри DataTemplate (MainWindow.xaml:119) — по кнопке на каждую клетку. -->
+            <Style x:Key="CellButtonStyle" TargetType="Button">
+                <!-- По умолчанию клетка белая (мёртвая). -->
+                <Setter Property="Background" Value="{StaticResource CellDeadBrush}" />
+                <!-- Цвет рамки клетки — серый. -->
+                <Setter Property="BorderBrush" Value="{StaticResource CellBorderBrush}" />
+                <!-- Тонкая рамка 0.5, чтобы получилась «сетка». -->
+                <Setter Property="BorderThickness" Value="0.5" />
+                <!-- Без внутренних отступов. -->
+                <Setter Property="Padding" Value="0" />
+                <!-- Курсор-«рука» — намёк, что на клетку можно кликнуть. -->
+                <Setter Property="Cursor" Value="Hand" />
+                <!-- Свой шаблон: клетка — просто цветной квадрат без текста. -->
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <!-- Border без содержимого: TemplateBinding берёт Background, BorderBrush и BorderThickness у самой кнопки — благодаря этому Setter/DataTrigger стиля меняют цвет квадрата. -->
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}" />
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <!-- [Стиль] [Binding] DataTrigger — триггер по ДАННЫМ (в отличие от Trigger, смотрящего на свойства самого элемента). Binding="{Binding IsAlive}" читает свойство IsAlive из DataContext кнопки — им служит CellViewModel этой клетки (CellViewModel.IsAlive, CellViewModel.cs:28);
+                         Value="True" — условие: сработать, когда IsAlive == true. Обновляется автоматически: SetField в IsAlive поднимает PropertyChanged, триггер это слышит. -->
+                    <DataTrigger Binding="{Binding IsAlive}" Value="True">
+                        <!-- Когда клетка жива — фон меняется на зелёный CellAliveBrush. Это то, что пользователь видит: клик или шаг симуляции -> зелёная клетка. -->
+                        <Setter Property="Background" Value="{StaticResource CellAliveBrush}" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- [Стиль] Стиль подписей панели («Строк:», «Плотность:» и т.д.). Используется: TextBlock-и верхней панели в MainWindow.xaml (MainWindow.xaml:38 и далее). -->
+            <Style x:Key="PanelLabelStyle" TargetType="TextBlock">
+                <!-- Выравнивание текста по центру по вертикали (в одну линию с TextBox/Slider). -->
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <!-- Отступы: слева 8, сверху 0, справа 4, снизу 0. -->
+                <Setter Property="Margin" Value="8,0,4,0" />
+                <!-- Полужирный шрифт. -->
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </Style>
+
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

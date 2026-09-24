@@ -1,0 +1,22 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Lab5 Run (workspace root)",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "dotnet run --project \"${workspaceFolder}/Lab5/Lab5.csproj\"",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Lab5 Run (Lab5 folder)",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "dotnet run --project \"${workspaceFolder}/Lab5.csproj\"",
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

@@ -1,0 +1,148 @@
+<!-- [MVVM] View — окно приложения (класс Lab5.MainWindow, код в MainWindow.xaml.cs, который только создаёт MainViewModel и кладёт её в DataContext — MainWindow.xaml.cs:22).
+     Поэтому все {Binding ...} ниже ищут свойства в MainViewModel (ViewModel/MainViewModel.cs).
+     Атрибуты корня: x:Class="Lab5.MainWindow" — класс-партнёр в code-behind; xmlns — стандартные элементы WPF; xmlns:x — служебные атрибуты XAML;
+     xmlns:d и xmlns:mc — пространства имён для дизайнера Visual Studio; xmlns:local — пространство имён Lab5;
+     xmlns:vm="clr-namespace:Lab5.ViewModel" — подключает папку ViewModel, чтобы писать {x:Type vm:CellViewModel} в DataTemplate;
+     mc:Ignorable="d" — во время работы программы игнорировать «дизайнерские» атрибуты d:...;
+     Title — заголовок окна (&quot; — это символ кавычки внутри атрибута); Height/Width — стартовый размер (высота 720, ширина 1000); MinHeight/MinWidth — минимальный размер окна. -->
+<Window x:Class="Lab5.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Lab5"
+        xmlns:vm="clr-namespace:Lab5.ViewModel"
+        mc:Ignorable="d"
+        Title="Игра &quot;Жизнь&quot; — Костин Д.А., ТРПО пр.5" Height="720" Width="1000"
+        MinHeight="500" MinWidth="700">
+    <!-- Grid — корневой контейнер-«таблица». Здесь только три строки друг под другом (сверху панель, в середине поле, снизу строка состояния). -->
+    <Grid>
+        <!-- Описание строк Grid. -->
+        <Grid.RowDefinitions>
+            <!-- Строка 0: Height="Auto" — высота по содержимому (панель управления). -->
+            <RowDefinition Height="Auto" />
+            <!-- Строка 1: Height="*" — забирает всё оставшееся место (поле клеток растягивается при изменении окна). -->
+            <RowDefinition Height="*" />
+            <!-- Строка 2: Auto — по содержимому (строка состояния). -->
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Панель настроек и управления -->
+        <!-- Border — рамка/подложка верхней панели. Атрибуты: Grid.Row="0" — поместить в строку 0 корневого Grid; Background — фон из глобального ресурса PanelBackgroundBrush (App.xaml, App.xaml:19; StaticResource = взять один раз при загрузке); Padding="8" — внутренний отступ. -->
+        <Border Grid.Row="0" Background="{StaticResource PanelBackgroundBrush}" Padding="8">
+            <!-- StackPanel — контейнер, который укладывает детей друг под другом (по умолчанию вертикально): сверху ряд настроек, под ним ряд кнопок. -->
+            <StackPanel>
+                <!-- WrapPanel — контейнер: элементы идут в строку и переносятся на следующую строку, если не помещаются (Orientation="Horizontal" — по горизонтали). Первый ряд: размеры, плотность, интервал. -->
+                <WrapPanel Orientation="Horizontal">
+                    <!-- Подпись «Строк:». Text — текст; Style="{StaticResource PanelLabelStyle}" — стиль из App.xaml (App.xaml:121): выравнивание по центру, отступы, жирный шрифт. -->
+                    <TextBlock Text="Строк:" Style="{StaticResource PanelLabelStyle}" />
+                    <!-- [Binding] Поле ввода числа строк. Text="{Binding Rows, UpdateSourceTrigger=PropertyChanged}": привязка к MainViewModel.Rows (MainViewModel.cs:64), режим по умолчанию для TextBox.Text — TwoWay (ViewModel -> экран и экран -> ViewModel);
+                         UpdateSourceTrigger=PropertyChanged — записывать в ViewModel на каждое нажатие клавиши (по умолчанию для TextBox — только при потере фокуса). Значение зажимается в 5..60 в сеттере Rows.
+                         Width="45" — ширина; VerticalContentAlignment="Center" — текст по центру по вертикали. Значение потом использует кнопка «Пересоздать поле» (ResizeField, MainViewModel.cs:247). -->
+                    <TextBox Text="{Binding Rows, UpdateSourceTrigger=PropertyChanged}" Width="45" VerticalContentAlignment="Center" />
+
+                    <!-- Подпись «Столбцов:» (стиль PanelLabelStyle). -->
+                    <TextBlock Text="Столбцов:" Style="{StaticResource PanelLabelStyle}" />
+                    <!-- [Binding] Поле ввода числа столбцов: привязка к MainViewModel.Cols (MainViewModel.cs:72), TwoWay, обновление при каждом нажатии клавиши; Width/VerticalContentAlignment — как у «Строк». -->
+                    <TextBox Text="{Binding Cols, UpdateSourceTrigger=PropertyChanged}" Width="45" VerticalContentAlignment="Center" />
+
+                    <!-- [Команда] Кнопка «Пересоздать поле». Content — надпись; Style — ControlButtonStyle из App.xaml (App.xaml:41): синяя, скруглённая, с эффектами;
+                         Command="{Binding ResizeFieldCommand}" — команда MainViewModel.ResizeFieldCommand (объявлена MainViewModel.cs:150, создана MainViewModel.cs:179 как RelayCommand(ResizeField, () => !IsRunning)):
+                         клик -> Execute -> метод ResizeField (MainViewModel.cs:245); кнопка неактивна, пока идёт симуляция (CanExecute). Пользователь видит новую сетку клеток. -->
+                    <Button Content="Пересоздать поле" Style="{StaticResource ControlButtonStyle}" Command="{Binding ResizeFieldCommand}" />
+
+                    <!-- Подпись «Плотность:». -->
+                    <TextBlock Text="Плотность:" Style="{StaticResource PanelLabelStyle}" />
+                    <!-- [Binding] Ползунок плотности. Value="{Binding Density}" — привязка к MainViewModel.Density (MainViewModel.cs:80; TwoWay для Slider.Value по умолчанию): двигаем ползунок -> пишется в ViewModel;
+                         Minimum="0" Maximum="1" — диапазон 0..1 (доля живых клеток); Width="120" — ширина; VerticalAlignment="Center" — по центру по вертикали. Значение использует Randomize (MainViewModel.cs:229). -->
+                    <Slider Value="{Binding Density}" Minimum="0" Maximum="1" Width="120" VerticalAlignment="Center" />
+                    <!-- [Binding] Подпись с процентами. Text="{Binding Density, StringFormat={}{0:P0}}": та же Density, StringFormat форматирует число — {0:P0} = проценты без дробной части (0.3 -> «30 %»);
+                         `{}` в начале — экранирование, чтобы XAML не принял фигурные скобки за расширение разметки. Style — PanelLabelStyle; MinWidth="40" — минимальная ширина, чтобы текст не «прыгал». -->
+                    <TextBlock Text="{Binding Density, StringFormat={}{0:P0}}" Style="{StaticResource PanelLabelStyle}" MinWidth="40" />
+
+                    <!-- Подпись «Интервал (мс):». -->
+                    <TextBlock Text="Интервал (мс):" Style="{StaticResource PanelLabelStyle}" />
+                    <!-- [Binding] [Таймер] Ползунок скорости. Value="{Binding IntervalMs}" — привязка к MainViewModel.IntervalMs (MainViewModel.cs:88, TwoWay); Minimum="50" Maximum="2000" — диапазон в мс (совпадает с Clamp в сеттере);
+                         Width="140", VerticalAlignment="Center" — размер и выравнивание. Если симуляция идёт, сеттер сразу меняет _timer.Interval — скорость меняется «на лету». -->
+                    <Slider Value="{Binding IntervalMs}" Minimum="50" Maximum="2000" Width="140" VerticalAlignment="Center" />
+                    <!-- [Binding] Подпись с текущим интервалом: Text="{Binding IntervalMs}" — то же свойство IntervalMs, показывает число мс; стиль PanelLabelStyle, MinWidth="40". -->
+                    <TextBlock Text="{Binding IntervalMs}" Style="{StaticResource PanelLabelStyle}" MinWidth="40" />
+                </WrapPanel>
+
+                <!-- Второй WrapPanel — ряд кнопок управления. Атрибуты: Orientation="Horizontal" — в строку; Margin="0,6,0,0" — отступ сверху 6 (слева, сверху, справа, снизу). -->
+                <WrapPanel Orientation="Horizontal" Margin="0,6,0,0">
+                    <!-- [Команда] «Случайное заполнение»: Command="{Binding RandomizeCommand}" -> MainViewModel.RandomizeCommand (объявлена MainViewModel.cs:136, создана MainViewModel.cs:165), Execute = Randomize (MainViewModel.cs:227);
+                         CanExecute: () => !IsRunning (кнопка активна только когда симуляция остановлена). Style — ControlButtonStyle, Content — надпись. Пользователь видит случайно раскрашенное поле. -->
+                    <Button Content="Случайное заполнение" Style="{StaticResource ControlButtonStyle}" Command="{Binding RandomizeCommand}" />
+                    <!-- [Команда] «Очистить»: MainViewModel.ClearCommand (MainViewModel.cs:138, MainViewModel.cs:167), Execute = ClearField (MainViewModel.cs:236); CanExecute: !IsRunning. Все клетки становятся белыми. -->
+                    <Button Content="Очистить" Style="{StaticResource ControlButtonStyle}" Command="{Binding ClearCommand}" />
+                    <!-- [Команда] «Шаг»: MainViewModel.StepCommand (MainViewModel.cs:140, MainViewModel.cs:169), Execute = Advance (MainViewModel.cs:254) — одно поколение; CanExecute: !IsRunning. -->
+                    <Button Content="Шаг" Style="{StaticResource ControlButtonStyle}" Command="{Binding StepCommand}" />
+                    <!-- [Команда] [Таймер] «Старт»: MainViewModel.StartCommand (MainViewModel.cs:142, MainViewModel.cs:171), Execute = Start (MainViewModel.cs:263) — запускает DispatcherTimer; CanExecute: !IsRunning (после запуска кнопка блекнет). -->
+                    <Button Content="Старт" Style="{StaticResource ControlButtonStyle}" Command="{Binding StartCommand}" />
+                    <!-- [Команда] «Стоп»: MainViewModel.StopCommand (MainViewModel.cs:144, MainViewModel.cs:173), Execute = Stop (MainViewModel.cs:272); CanExecute: IsRunning (наоборот — активна только во время симуляции). -->
+                    <Button Content="Стоп" Style="{StaticResource ControlButtonStyle}" Command="{Binding StopCommand}" />
+                    <!-- [Команда] [JSON] «Экспорт в JSON»: MainViewModel.ExportCommand (MainViewModel.cs:146, MainViewModel.cs:175), Execute = Export (MainViewModel.cs:280) — открывает SaveFileDialog; CanExecute не задан -> всегда доступна. -->
+                    <Button Content="Экспорт в JSON" Style="{StaticResource ControlButtonStyle}" Command="{Binding ExportCommand}" />
+                    <!-- [Команда] [JSON] «Импорт из JSON»: MainViewModel.ImportCommand (MainViewModel.cs:148, MainViewModel.cs:177), Execute = Import (MainViewModel.cs:306) — открывает OpenFileDialog; CanExecute: !IsRunning. -->
+                    <Button Content="Импорт из JSON" Style="{StaticResource ControlButtonStyle}" Command="{Binding ImportCommand}" />
+                </WrapPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Поле клеток -->
+        <!-- Border — рамка вокруг поля. Атрибуты: Grid.Row="1" — средняя (растягиваемая) строка; Margin="8" — внешний отступ; BorderBrush="{StaticResource CellBorderBrush}" — цвет рамки (App.xaml, App.xaml:27); BorderThickness="1" — толщина; Background="White" — белый фон. -->
+        <Border Grid.Row="1" Margin="8" BorderBrush="{StaticResource CellBorderBrush}" BorderThickness="1" Background="White">
+            <!-- ScrollViewer — добавляет полосы прокрутки, если поле (до 60x60 клеток по 18 px) не помещается. Атрибуты: HorizontalScrollBarVisibility="Auto" / VerticalScrollBarVisibility="Auto" — полоса появляется только при необходимости. -->
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                <!-- [Binding] [MVVM] ItemsControl — элемент, который для КАЖДОГО объекта коллекции строит визуальный элемент по шаблону. ItemsSource="{Binding Cells}" — источник: MainViewModel.Cells (MainViewModel.cs:60, ObservableCollection<CellViewModel>);
+                     при Add/Clear коллекции экран обновляется сам. HorizontalAlignment/VerticalAlignment="Center" — поле по центру области. -->
+                <ItemsControl ItemsSource="{Binding Cells}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <!-- ItemsPanel — какая панель раскладывает элементы (по умолчанию вертикальный список; нам нужна сетка). -->
+                    <ItemsControl.ItemsPanel>
+                        <!-- ItemsPanelTemplate — шаблон этой панели. -->
+                        <ItemsPanelTemplate>
+                            <!-- UniformGrid — сетка одинаковых ячеек, заполняется слева направо, сверху вниз. Rows="{Binding Rows}" Columns="{Binding Cols}" — число строк/столбцов из MainViewModel.Rows (MainViewModel.cs:64) и Cols (MainViewModel.cs:72);
+                                 порядок клеток в Cells (строка за строкой, RebuildCells MainViewModel.cs:189) совпадает с порядком заполнения сетки. -->
+                            <UniformGrid Rows="{Binding Rows}" Columns="{Binding Cols}" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <!-- ItemTemplate — как выглядит один элемент коллекции. -->
+                    <ItemsControl.ItemTemplate>
+                        <!-- DataTemplate DataType="{x:Type vm:CellViewModel}" — шаблон данных для объекта CellViewModel (CellViewModel.cs:13). Внутри шаблона DataContext = сам CellViewModel этой клетки, поэтому Binding ниже ищут свойства в нём, а не в MainViewModel. -->
+                        <DataTemplate DataType="{x:Type vm:CellViewModel}">
+                            <!-- [Стиль] [Команда] Кнопка-клетка. Width="18" Height="18" — размер квадрата; Style="{StaticResource CellButtonStyle}" — стиль из App.xaml (App.xaml:88): белая, а зелёная при IsAlive через DataTrigger;
+                                 Command="{Binding ToggleCommand}" — свойство CellViewModel.ToggleCommand (CellViewModel.cs:36), которое хранит общую MainViewModel.ToggleCellCommand (MainViewModel.cs:134, создана MainViewModel.cs:163; Execute = ToggleCell MainViewModel.cs:216;
+                                 CanExecute: !IsRunning — во время симуляции клетки не кликаются);
+                                 CommandParameter="{Binding}" — пустой Binding = сам текущий DataContext, то есть эта CellViewModel: она передаётся параметром в Execute, и ViewModel знает, какую клетку переключить. -->
+                            <Button Width="18" Height="18"
+                                    Style="{StaticResource CellButtonStyle}"
+                                    Command="{Binding ToggleCommand}"
+                                    CommandParameter="{Binding}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Строка состояния -->
+        <!-- Border нижней панели. Grid.Row="2" — нижняя строка; Background — PanelBackgroundBrush; Padding="8,4" — отступы 8 по горизонтали и 4 по вертикали. -->
+        <Border Grid.Row="2" Background="{StaticResource PanelBackgroundBrush}" Padding="8,4">
+            <!-- DockPanel — контейнер, «пристыковывающий» элементы к краям; последний элемент без Dock заполняет остаток (здесь — текст статуса). -->
+            <DockPanel>
+                <!-- TextBlock «Живых клеток». DockPanel.Dock="Right" — прижать к правому краю; Margin="12,0,0,0" — отступ слева 12. Внутри — два Run (фрагменты текста в одной строке). -->
+                <TextBlock DockPanel.Dock="Right" Margin="12,0,0,0">
+                    <!-- Run 1: постоянный текст. Run 2: [Binding] Text="{Binding AliveCount, Mode=OneWay}" — MainViewModel.AliveCount (MainViewModel.cs:122, вычисляется LINQ-ом); Mode=OneWay — только ViewModel -> экран (у свойства нет set, TwoWay не нужен); FontWeight="SemiBold" — жирнее. -->
+                    <Run Text="Живых клеток: " /><Run Text="{Binding AliveCount, Mode=OneWay}" FontWeight="SemiBold" />
+                </TextBlock>
+                <!-- TextBlock «Поколение»: тоже справа (Dock="Right", Margin="12,0,0,0"); из-за порядка окажется левее «Живых клеток». -->
+                <TextBlock DockPanel.Dock="Right" Margin="12,0,0,0">
+                    <!-- [Binding] Run с Text="{Binding Generation, Mode=OneWay}" — MainViewModel.Generation (MainViewModel.cs:105, private set), только чтение; растёт на каждом шаге. -->
+                    <Run Text="Поколение: " /><Run Text="{Binding Generation, Mode=OneWay}" FontWeight="SemiBold" />
+                </TextBlock>
+                <!-- [Binding] Сообщение статуса слева (заполняет остаток DockPanel): Text="{Binding StatusMessage}" — MainViewModel.StatusMessage (MainViewModel.cs:126); TextTrimming="CharacterEllipsis" — если текст не помещается, обрезать с «...». -->
+                <TextBlock Text="{Binding StatusMessage}" TextTrimming="CharacterEllipsis" />
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

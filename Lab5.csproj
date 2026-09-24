@@ -1,0 +1,18 @@
+<!-- Файл проекта SDK-стиля: описывает, как собирать приложение. Sdk="Microsoft.NET.Sdk" — стандартный набор правил сборки .NET (сам находит все *.cs и *.xaml в папке). -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- PropertyGroup — группа настроек проекта. -->
+  <PropertyGroup>
+    <!-- WinExe — оконное приложение (без чёрной консоли при запуске). -->
+    <OutputType>WinExe</OutputType>
+    <!-- Целевая платформа: .NET 10, вариант для Windows (нужен для WPF). -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <!-- Включает проверку null (Nullable): поэтому в коде есть типы со знаком ? (object?, string?) и предупреждения о возможном null. -->
+    <Nullable>enable</Nullable>
+    <!-- ImplicitUsings: автоматически подключаются частые using (System, System.IO, System.Linq...), поэтому в коде нет using System; для Math, Random, Action. -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- UseWPF: подключает библиотеки WPF и компилятор XAML (App.xaml, MainWindow.xaml превращаются в код). -->
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+</Project>
